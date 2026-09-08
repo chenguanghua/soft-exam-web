@@ -8,7 +8,7 @@
 |---|---|---|
 | 单选题 | 1163 | 历年真题 853（试题分类精解 2018 版）+ AI 精炼 310 |
 | 案例分析 | 20 | 数据流图 / 数据库 / UML / 数据结构 / 算法 / 通用模板 |
-| 速记卡片 | 95 | 高频必背：排序复杂度、设计模式、协议端口、范式、案例模板等 |
+| 速记卡片 | 138 | 高频必背：口诀速记、易混辨析、高频数值、设计模式、案例模板等 |
 
 ## 功能
 
@@ -61,7 +61,7 @@ soft-exam-web/
 │   └── wrong.js          # 错题本
 ├── data/
 │   ├── questions.json    # 1183 题（单选+案例）
-│   └── flashcards.json   # 95 张卡片
+│   └── flashcards.json   # 138 张卡片
 └── scripts/
     ├── export_data.cjs   # 从 wechat_ticker 小程序题库重新导出 JSON
     └── ui_smoke.cjs      # Playwright 端到端冒烟测试
