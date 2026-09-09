@@ -59,7 +59,7 @@ const CardsV = {
               <div>${rich(c.question)}</div>
             </div>
             <div class="face back">
-              <div>${rich(c.answer)}</div>
+              <div>${rich(c.answer || '暂无解析，请参考教材相关章节')}</div>
               <span class="hint">点击卡片翻回</span>
             </div>
           </div>
