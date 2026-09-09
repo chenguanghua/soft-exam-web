@@ -21,7 +21,7 @@ const CaseV = {
     }
 
     const rows = [...byCat.entries()].map(([cat, qs]) => `
-      <div style="margin-top:16px">
+      <div style="margin-top:16px" data-cat-section="${esc(cat)}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <h3 style="font-size:15px;margin:0">${esc(cat)}</h3>
           <span class="tag">${qs.length} 题</span>
@@ -107,8 +107,11 @@ const CaseV = {
     const a = t.dataset.action
     if (a === 'open-case') { this.openById(Number(t.dataset.id)); return }
     if (a === 'jump-cat') {
-      const el = [...document.querySelectorAll('.wrong-item')].find(x => x.querySelector('.wi-q') && x.textContent.includes(t.dataset.cat))
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const section = document.querySelector(`[data-cat-section="${esc(t.dataset.cat)}"]`)
+      if (section) {
+        const firstItem = section.querySelector('.wrong-item')
+        if (firstItem) firstItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
       return
     }
     if (a === 'case-back') { this.state = null; this.renderList(); return }

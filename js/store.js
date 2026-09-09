@@ -1,10 +1,12 @@
 /**
  * store.js — localStorage 封装
  * 所有数据仅存本机浏览器，不上传。
- * 键位：rk_wrong / rk_progress / rk_answers / rk_caseDone / rk_knownCards / rk_cardPos / rk_theme / rk_lastView
+ * 键位：rk_wrong / rk_progress / rk_answers / rk_caseDone / rk_knownCards / rk_cardPos / rk_theme / rk_lastView / rk_version
  */
 const Store = (() => {
   const P = 'rk_'
+  const DATA_VERSION = 1
+
   const read = (k, def) => {
     try {
       const raw = localStorage.getItem(P + k)
@@ -16,9 +18,28 @@ const Store = (() => {
   }
   const remove = (k) => { try { localStorage.removeItem(P + k) } catch (e) {} }
 
+  // 数据版本迁移支持
+  function migrate() {
+    const currentVersion = read('version', 0)
+    if (currentVersion >= DATA_VERSION) return
+
+    // 未来版本迁移逻辑在此添加
+    // if (currentVersion < 2) { ... }
+
+    write('version', DATA_VERSION)
+  }
+
+  // 初始化时执行迁移
+  migrate()
+
   const getWrong = () => read('wrong', [])
   const setWrong = (ids) => write('wrong', ids)
-  const wrongAdd = (id) => { if (!getWrong().includes(id)) { const w = getWrong(); w.push(id); setWrong(w) } }
+  const wrongAdd = (id) => {
+    const w = getWrong()
+    if (w.includes(id)) return
+    w.push(id)
+    setWrong(w)
+  }
   const wrongRemove = (id) => setWrong(getWrong().filter(x => x !== id))
   const wrongClear = () => remove('wrong')
 

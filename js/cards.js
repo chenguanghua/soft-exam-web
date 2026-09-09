@@ -27,6 +27,10 @@ const CardsV = {
   },
 
   renderCard() {
+    this._renderCardInternal()
+  },
+
+  _renderCardInternal() {
     const s = this.state
     const c = s.list[s.idx]
     const knownAll = this._knownSet()
@@ -49,7 +53,7 @@ const CardsV = {
         <div class="progress" style="width:100%;max-width:680px;margin-bottom:14px"><i style="width:${pct(s.idx + 1, s.list.length)}%"></i></div>
 
         <div class="card3d">
-          <div class="fcard" id="fcard">
+          <div class="fcard" id="fcard" data-action="flip-card">
             <div class="face front">
               <span class="hint">${esc(c.tag || '速记')} · 点击卡片翻面</span>
               <div>${rich(c.question)}</div>
@@ -70,8 +74,6 @@ const CardsV = {
         <div class="small muted" style="margin-top:10px">“认识”会记录掌握状态；“重学模式”只浏览不改变记录</div>
       </div>
     `
-    const fc = $('#fcard')
-    fc.addEventListener('click', () => fc.classList.toggle('flip'))
   },
 
   renderEmpty() {
@@ -93,7 +95,7 @@ const CardsV = {
     const n = s.list.length
     s.idx = ((s.idx + delta) % n + n) % n
     if (s.filter === 'all') Store.cardPosSet(s.idx)
-    this.renderCard()
+    this._renderCardInternal()
   },
 
   onEvent(e) {
@@ -101,20 +103,21 @@ const CardsV = {
     if (!t) return
     const a = t.dataset.action
     const s = this.state
-    if (a === 'f-all') { this.state = this._newState('all', Store.cardPosGet()); this.renderCard(); return }
-    if (a === 'f-new') { this.state = this._newState('new', 0); this.renderCard(); return }
-    if (a === 'f-known') { this.state = this._newState('known', 0); this.renderCard(); return }
-    if (a === 'shuffle') { const list = shuffle(Data.flashcards()); this.state = { list, idx: 0, filter: s.filter }; this.renderCard(); return }
+    if (a === 'flip-card') { t.classList.toggle('flip'); return }
+    if (a === 'f-all') { this.state = this._newState('all', Store.cardPosGet()); this._renderCardInternal(); return }
+    if (a === 'f-new') { this.state = this._newState('new', 0); this._renderCardInternal(); return }
+    if (a === 'f-known') { this.state = this._newState('known', 0); this._renderCardInternal(); return }
+    if (a === 'shuffle') { const list = shuffle(Data.flashcards()); this.state = { list, idx: 0, filter: s.filter }; this._renderCardInternal(); return }
     if (a === 'next') { this._go(1); return }
     if (a === 'prev') { this._go(-1); return }
     if (a === 'know') {
       const c = s.list[s.idx]
       Store.cardKnown(c.id)
       toast('已标记掌握')
-      if (s.filter === 'new' && s.idx >= s.list.length - 1) { this.renderCard(); return } // 未掌握组翻到最后时仅刷新状态
+      if (s.filter === 'new' && s.idx >= s.list.length - 1) { this._renderCardInternal(); return }
       this._go(1)
       return
     }
-    if (a === 'again') { this.state = this._newState('all', Store.cardPosGet()); toast('进入浏览模式，不改变记录'); this.renderCard(); return }
+    if (a === 'again') { this.state = this._newState('all', Store.cardPosGet()); toast('进入浏览模式，不改变记录'); this._renderCardInternal(); return }
   }
 }

@@ -74,13 +74,26 @@ const App = {
     window.addEventListener('popstate', () => this.render(this.viewFromHash()))
 
     // 加载题库
-    $('#bootLoading').textContent = '正在加载题库…'
+    this._loadDataWithRetry()
+  },
+
+  _loadDataWithRetry(retryCount = 0) {
+    const maxRetries = 3
+    $('#bootLoading').innerHTML = `<div>正在加载题库…${retryCount > 0 ? `（第 ${retryCount} 次重试）` : ''}</div>`
     Data.load().then(() => {
       $('#bootLoading').style.display = 'none'
       this.render(this.viewFromHash())
       this.refreshBadge()
     }).catch(err => {
-      $('#bootLoading').innerHTML = `<div style="color:var(--bad)">题库加载失败：${esc(err.message)}<br><br>请确认通过本地 HTTP 服务器或 GitHub Pages 访问（直接双击文件打开会被浏览器拦截）。</div>`
+      const canRetry = retryCount < maxRetries
+      $('#bootLoading').innerHTML = `
+        <div style="color:var(--bad)">题库加载失败：${esc(err.message)}</div>
+        <div style="margin-top:12px;color:var(--text2)">请确认通过本地 HTTP 服务器或 GitHub Pages 访问（直接双击文件打开会被浏览器拦截）。</div>
+        ${canRetry ? `<div style="margin-top:16px"><button class="btn btn-primary" id="retryBtn">重试</button></div>` : '<div style="margin-top:12px;color:var(--text3)">请刷新页面或检查网络连接</div>'}
+      `
+      if (canRetry) {
+        $('#retryBtn').addEventListener('click', () => this._loadDataWithRetry(retryCount + 1))
+      }
     })
   },
 

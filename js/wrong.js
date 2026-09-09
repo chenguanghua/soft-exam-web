@@ -22,7 +22,7 @@ const WrongV = {
       <div class="wrong-item" data-action="practice-at" data-idx="${i}">
         <span class="wi-idx">${i + 1}</span>
         <div class="wi-q">${esc(String(q.question).slice(0, 90))}${q.question.length > 90 ? '…' : ''}
-          <small>${esc(q.category)} ${q.source ? '· ' + esc(q.source) : ''} · 答错 ${answersOf(q.id)} 次</small>
+          <small>${esc(q.category)} ${q.source ? '· ' + esc(q.source) : ''} · 答错 ${wrongCountOf(q.id)} 次 / 共答 ${totalCountOf(q.id)} 次</small>
         </div>
         <button class="btn btn-sm btn-danger" data-action="rm-one" data-id="${q.id}" title="移出错题本">移除</button>
       </div>`).join('')
@@ -65,7 +65,12 @@ const WrongV = {
   }
 }
 
-function answersOf(qid) {
+function wrongCountOf(qid) {
+  const a = Store.getAnswers()[qid]
+  return a ? (a.n - a.o) : 1
+}
+
+function totalCountOf(qid) {
   const a = Store.getAnswers()[qid]
   return a ? a.n : 1
 }

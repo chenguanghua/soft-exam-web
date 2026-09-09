@@ -9,13 +9,15 @@ const Dash = {
     const byCat = {}
     for (const c of cats) byCat[c.name] = { answered: 0, ok: 0, n: 0 }
 
-    let okSum = 0, nSum = 0, answeredTotal = 0, realAnswered = 0, aiAnswered = 0
+    let okSum = 0, nSum = 0, answeredTotal = 0, realAnswered = 0, aiAnswered = 0, explainAnswered = 0
     for (const [qid, rec] of Object.entries(answers)) {
       const q = Data.byId(Number(qid))
       if (!q || q.questionType === 'case') continue
       answeredTotal++
       okSum += rec.o; nSum += rec.n
-      if (q.id >= 1000) realAnswered++; else aiAnswered++
+      if (q.id >= 1000 && q.id < 2000) realAnswered++
+      else if (q.id < 1000) aiAnswered++
+      else explainAnswered++
       if (byCat[q.category]) { byCat[q.category].answered++; byCat[q.category].ok += rec.o; byCat[q.category].n += rec.n }
     }
     const acc = nSum ? Math.round((okSum / nSum) * 100) : 0
@@ -46,7 +48,7 @@ const Dash = {
 
       <div class="grid grid-4">
         <div class="stat brand-t"><div class="num brand">${answeredTotal}<small> / ${total}</small></div><div class="lbl">单题已刷 · 总正确率 ${acc}%</div></div>
-        <div class="stat ok-t"><div class="num ok">${caseN}<small> / ${Data.cases().length}</small></div><div class="lbl">案例分析已练</div></div>
+        <div class="stat ok-t"><div class="num ok">${explainAnswered}<small> / ${Data.list('explain', '全部').length}</small></div><div class="lbl">高频精讲已刷</div></div>
         <div class="stat warn-t"><div class="num">${knownN}<small> / ${Data.flashcards().length}</small></div><div class="lbl">速记卡片已掌握</div></div>
         <div class="stat bad-t"><div class="num bad">${wrongQs}</div><div class="lbl">错题待复习</div></div>
       </div>
@@ -57,11 +59,12 @@ const Dash = {
           <button class="btn" data-action="quick-random">随机热身 20 题</button>
           <button class="btn" data-action="real-mode">历年真题模式</button>
           <button class="btn" data-action="ai-mode">AI 精炼模式</button>
+          <button class="btn" data-action="explain-mode">高频精讲模式</button>
           <button class="btn" data-action="wrong-practice" ${wrongQs ? '' : 'disabled'}>错题重练（${wrongQs}）</button>
           <button class="btn" data-action="case-mode">案例分析</button>
         </div>
         <div style="margin-top:12px;display:flex;gap:18px;font-size:12.5px;color:var(--text2)">
-          <span>真题已刷 <b>${realAnswered}</b> · AI 已刷 <b>${aiAnswered}</b></span>
+          <span>真题已刷 <b>${realAnswered}</b> · AI 已刷 <b>${aiAnswered}</b> · 精讲已刷 <b>${explainAnswered}</b></span>
         </div>
       </div>
 
@@ -73,14 +76,14 @@ const Dash = {
   onEvent(e) {
     const t = e.target.closest('[data-action], [data-cat]')
     if (!t) return
-    const action = t.dataset.action || t.dataset.action
-    if (t.dataset.action) {
-      const a = t.dataset.action
+    const a = t.dataset.action
+    if (a) {
       if (a === 'start-cat') { Quiz.start({ scope: 'all', cat: t.dataset.cat, resume: true }) }
       else if (a === 'continue-last') { const l = Store.getLastQuiz(); if (l) Quiz.start({ scope: l.scope, cat: l.cat, resume: true }) }
       else if (a === 'quick-random') { Quiz.start({ scope: 'all', cat: '全部', randomCount: 20 }) }
       else if (a === 'real-mode') { Quiz.start({ scope: 'real', cat: '全部' }) }
       else if (a === 'ai-mode') { Quiz.start({ scope: 'ai', cat: '全部' }) }
+      else if (a === 'explain-mode') { Quiz.start({ scope: 'explain', cat: '全部' }) }
       else if (a === 'wrong-practice') { Quiz.startWrong() }
       else if (a === 'case-mode') { App.go('case') }
       return

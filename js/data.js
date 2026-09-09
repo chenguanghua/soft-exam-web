@@ -7,22 +7,33 @@
 const Data = (() => {
   let QUESTIONS = []
   let FLASHCARDS = []
+  let QUESTION_MAP = new Map()
+  let FLASHCARD_MAP = new Map()
   let READY = false
 
-  // 范围：all=全部单题 real=历年真题(id>=1000) ai=AI精炼(id<1000)
+  // 范围：all=全部单题 real=历年真题(id>=1000) ai=AI精炼(id<1000) explain=高频精讲(id>=2000)
   const SCOPES = [
     { id: 'all', name: '全部' },
     { id: 'real', name: '历年真题' },
-    { id: 'ai', name: 'AI 精炼' }
+    { id: 'ai', name: 'AI 精炼' },
+    { id: 'explain', name: '高频精讲' }
   ]
 
   async function load() {
-    const [qs, cs] = await Promise.all([
+    const [qs, cs, extraQs, extraCs] = await Promise.all([
       fetch('data/questions.json').then(r => { if (!r.ok) throw new Error('questions.json ' + r.status); return r.json() }),
-      fetch('data/flashcards.json').then(r => { if (!r.ok) throw new Error('flashcards.json ' + r.status); return r.json() })
+      fetch('data/flashcards.json').then(r => { if (!r.ok) throw new Error('flashcards.json ' + r.status); return r.json() }),
+      fetch('data/extra_questions.json').then(r => { if (!r.ok) throw new Error('extra_questions.json ' + r.status); return r.json() }),
+      fetch('data/extra_flashcards.json').then(r => { if (!r.ok) throw new Error('extra_flashcards.json ' + r.status); return r.json() })
     ])
-    QUESTIONS = qs
-    FLASHCARDS = cs
+    // 合并题库和速记卡片
+    QUESTIONS = [...qs, ...extraQs]
+    FLASHCARDS = [...cs, ...extraCs]
+
+    // 构建 Map 缓存，O(1) 查找
+    QUESTION_MAP = new Map(QUESTIONS.map(q => [q.id, q]))
+    FLASHCARD_MAP = new Map(FLASHCARDS.map(c => [String(c.id), c]))
+
     READY = true
     return true
   }
@@ -57,13 +68,14 @@ const Data = (() => {
     return single().filter(q => {
       if (scope === 'real' && q.id < 1000) return false
       if (scope === 'ai' && q.id >= 1000) return false
+      if (scope === 'explain' && q.id < 2000) return false
       if (cat && cat !== '全部' && q.category !== cat) return false
       return true
     })
   }
 
-  const byId = (id) => QUESTIONS.find(q => q.id === id)
-  const cardById = (id) => FLASHCARDS.find(c => String(c.id) === String(id))
+  const byId = (id) => QUESTION_MAP.get(id)
+  const cardById = (id) => FLASHCARD_MAP.get(String(id))
   const totalSingle = () => single().length
 
   return { load, isReady, categories, caseCategories, list, cases, byId, cardById, totalSingle, SCOPES, flashcards: () => FLASHCARDS }

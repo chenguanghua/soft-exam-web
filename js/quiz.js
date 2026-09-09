@@ -83,8 +83,8 @@ const Quiz = {
     if (s.idx >= s.list.length) return this.renderDone()
 
     const q = s.list[s.idx]
-    const answered = s.answeredId === q.id
-    const pos = s.done ? s.list.length : Math.min(s.idx + 1, s.list.length)
+    const answered = s.answeredId === q.id && s.answeredIdx === s.idx
+    const pos = Math.min(s.idx + 1, s.list.length)
     const labels = q.options.map((_, i) => LABELS[i] || String(i))
     const isLast = s.idx === s.list.length - 1
     const acc = s.nN ? Math.round((s.okN / s.nN) * 100) : '–'
@@ -137,12 +137,13 @@ const Quiz = {
   answer(idx) {
     const s = this.state
     const q = s.list[s.idx]
-    if (s.answeredId === q.id) return
+    if (s.answeredId === q.id && s.answeredIdx === s.idx) return
     const ok = idx === q.answerIndex
     s.okN += ok ? 1 : 0
     s.nN += 1
     s.selectedIdx = idx
     s.answeredId = q.id
+    s.answeredIdx = s.idx
     Store.record(q.id, ok)
     if (!ok) Store.wrongAdd(q.id)
     else if (s.wrong) Store.wrongRemove(q.id) // 错题重练：答对即移出错题本
@@ -156,13 +157,9 @@ const Quiz = {
     if (s.idx + 1 >= s.list.length) { s.done = true; this.renderDone(); return }
     s.idx += 1
     delete s.answeredId
+    delete s.answeredIdx
     delete s.selectedIdx
     this.renderQuestion()
-  },
-
-  quitToPick() {
-    this.state = { mode: 'pick', selScope: 'all', selCat: '全部' }
-    this.renderPick()
   },
 
   // ============ 结束统计 ============
