@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>备忘录</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #f5f5f0;
+    --card-bg: #fffef8;
+    --text: #2a2a2a;
+    --text-muted: #888;
+    --accent: #4a6741;
+    --border: #e0e0d8;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+  
+  .card-container {
+    width: 100%;
+    max-width: 380px;
+    perspective: 1000px;
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    min-height: 280px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+  
+  .card-face {
+    position: absolute;
+    inset: 0;
+    padding: 28px 24px;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+  }
+  
+  .card-back {
+    transform: rotateY(180deg);
+    background: #faf9f5;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .tag {
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(74, 103, 65, 0.08);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .counter {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .question {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
+  .answer {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #3a3a3a;
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+  }
+  
+  .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(74, 103, 65, 0.04);
+  }
+  
+  .btn-mode {
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 18px;
+    width: auto;
+    height: auto;
+    font-weight: 500;
+  }
+  
+  .btn-mode.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  .mode-switcher {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    justify-content: center;
+  }
+  
+  .progress {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  
+  .keyboard-hint {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    opacity: 0.6;
+  }
+  
+  .kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    margin: 0 2px;
+  }
+  
+  /* Stealth mode - looks like a system window */
+  .stealth-mode {
+    background: transparent;
+  }
+  
+  .stealth-mode .card {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    opacity: 0.92;
+  }
+  
+  /* Compact mode */
+  .compact-mode .card {
+    min-height: 200px;
+  }
+  
+  .compact-mode .card-face {
+    padding: 20px 18px;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+  
+  /* Scrollbar styling */
+  .answer::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .answer::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="mode-switcher">
+  <button class="btn btn-mode active" data-mode="cards">速记卡片</button>
+  <button class="btn btn-mode" data-mode="questions">刷题目</button>
+</div>
+
+<div class="card-container">
+  <div class="card" id="card">
+    <div class="card-face card-front">
+      <div class="card-header">
+        <span class="tag" id="tag">速记</span>
+        <span class="counter" id="counter">1 / 158</span>
+      </div>
+      <div class="question" id="question">加载中...</div>
+      <div class="hint">点击卡片或按空格键翻面</div>
+      <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <div class="card-face card-back">
+      <div class="card-header">
+        <span class="tag" style="background:rgba(74,103,65,0.12)">答案</span>
+        <span class="counter" id="counterBack">1 / 158</span>
+      </div>
+      <div class="answer" id="answer"></div>
+      <div class="hint">点击卡片或按空格键翻回</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" id="prevBtn" title="上一个 (←)">‹</button>
+  <button class="btn" id="shuffleBtn" title="随机 (R)">⟳</button>
+  <button class="btn" id="nextBtn" title="下一个 (→)">›</button>
+</div>
+
+<div class="keyboard-hint">
+  <span class="kbd">←</span><span class="kbd">→</span> 切换 
+  <span class="kbd">Space</span> 翻面 
+  <span class="kbd">R</span> 随机
+</div>
+
+<script>
+const SneakApp = {
+  mode: 'cards', // 'cards' or 'questions'
+  list: [],
+  idx: 0,
+  flipped: false,
+  
+  async init() {
+    // Load data from JSON files
+    try {
+      const [flashcards, questions] = await Promise.all([
+        fetch('data/flashcards.json').then(r => r.json()),
+        fetch('data/questions.json').then(r => r.json())
+      ]);
+      this.flashcards = flashcards;
+      this.questions = questions.filter(q => q.questionType !== 'case');
+      this.list = this.flashcards;
+      this.render();
+    } catch (e) {
+      document.getElementById('question').textContent = '数据加载失败，请确保在项目目录下打开';
+    }
+    
+    this.bindEvents();
+  },
+  
+  bindEvents() {
+    // Card flip
+    document.getElementById('card').addEventListener('click', () => this.flip());
+    
+    // Controls
+    document.getElementById('prevBtn').addEventListener('click', (e) => { e.stopPropagation(); this.prev(); });
+    document.getElementById('nextBtn').addEventListener('click', (e) => { e.stopPropagation(); this.next(); });
+    document.getElementById('shuffleBtn').addEventListener('click', (e) => { e.stopPropagation(); this.shuffle(); });
+    
+    // Mode switcher
+    document.querySelectorAll('.btn-mode').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.mode = btn.dataset.mode;
+        this.list = this.mode === 'cards' ? this.flashcards : this.questions;
+        this.idx = 0;
+        this.flipped = false;
+        document.getElementById('card').classList.remove('flipped');
+        this.render();
+      });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') this.prev();
+      else if (e.key === 'ArrowRight') this.next();
+      else if (e.key === ' ') { e.preventDefault(); this.flip(); }
+      else if (e.key === 'r' || e.key === 'R') this.shuffle();
+    });
+  },
+  
+  flip() {
+    this.flipped = !this.flipped;
+    document.getElementById('card').classList.toggle('flipped', this.flipped);
+  },
+  
+  next() {
+    this.idx = (this.idx + 1) % this.list.length;
+    this.flipped = false;
+    document.getElementById('card').classList.remove('flipped');
+    this.render();
+  },
+  
+  prev() {
+    this.idx = (this.idx - 1 + this.list.length) % this.list.length;
+    this.flipped = false;
+    document.getElementById('card').classList.remove('flipped');
+    this.render();
+  },
+  
+  shuffle() {
+    // Fisher-Yates shuffle
+    for (let i = this.list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.list[i], this.list[j]] = [this.list[j], this.list[i]];
+    }
+    this.idx = 0;
+    this.flipped = false;
+    document.getElementById('card').classList.remove('flipped');
+    this.render();
+  },
+  
+  render() {
+    if (!this.list.length) return;
+    const item = this.list[this.idx];
+    
+    const tag = document.getElementById('tag');
+    const question = document.getElementById('question');
+    const answer = document.getElementById('answer');
+    const counter = document.getElementById('counter');
+    const counterBack = document.getElementById('counterBack');
+    const progressBar = document.getElementById('progressBar');
+    
+    if (this.mode === 'cards') {
+      tag.textContent = item.tag || '速记';
+      question.textContent = item.question;
+      answer.textContent = item.answer || '暂无解析';
+    } else {
+      tag.textContent = item.category || '题目';
+      const opts = item.options ? item.options.map((o, i) => `${String.fromCharCode(65+i)}. ${o}`).join('\n') : '';
+      question.textContent = item.question + (opts ? '\n\n' + opts : '');
+      const correct = item.answerIndex !== undefined ? `${String.fromCharCode(65 + item.answerIndex)}` : '';
+      answer.textContent = (correct ? `正确答案：${correct}\n\n` : '') + (item.explanation || '暂无解析');
+    }
+    
+    counter.textContent = `${this.idx + 1} / ${this.list.length}`;
+    counterBack.textContent = `${this.idx + 1} / ${this.list.length}`;
+    progressBar.style.width = `${((this.idx + 1) / this.list.length) * 100}%`;
+  }
+};
+
+SneakApp.init();
+</script>
+
+</body>
+</html>
